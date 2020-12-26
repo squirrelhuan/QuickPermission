@@ -1,0 +1,3 @@
+rootProject.name = "QuickPermission"
+include ':app'
+include ':quickpermission_library'
