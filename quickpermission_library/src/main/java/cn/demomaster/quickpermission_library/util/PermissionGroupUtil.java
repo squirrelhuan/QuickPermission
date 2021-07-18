@@ -4,9 +4,7 @@ import android.Manifest;
 import android.text.TextUtils;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import cn.demomaster.quickpermission_library.model.PermissionModel;
 
@@ -105,6 +103,8 @@ public class PermissionGroupUtil {
                 return "数据包状态查看";
             case Manifest.permission.WRITE_SETTINGS:
                 return "修改系统设置";
+            case Manifest.permission.BIND_ACCESSIBILITY_SERVICE:
+                return "无障碍服务";
         }
         return null;
     }

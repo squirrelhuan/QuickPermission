@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">QuickPermission</string>
+    <string name="read_calendar">读取日历</string>
+</resources>
