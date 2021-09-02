@@ -3,7 +3,6 @@ package cn.demomaster.quickpermission_library.dialog;
 import android.app.Activity;
 import android.os.Bundle;
 import android.view.LayoutInflater;
-import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
@@ -25,14 +24,9 @@ public abstract class DialogActivity extends Activity {
         frameLayout = new FrameLayout(this);
         generateView(getLayoutInflater(),frameLayout);
         setContentView(frameLayout);
-        StatusBarUtil.transparencyBar(new WeakReference<Activity>(this));
+        StatusBarUtil.transparencyBar(new WeakReference<>(this));
         //getWindow().setBackgroundDrawable(new ColorDrawable(0x55000000));
-        frameLayout.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                close();
-            }
-        });
+        frameLayout.setOnClickListener(v -> close());
     }
     
     public abstract void generateView(LayoutInflater layoutInflater, ViewGroup viewParent);

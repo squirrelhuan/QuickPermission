@@ -27,20 +27,9 @@ public class DialogWindowActivity extends DialogActivity {
     public void generateView(LayoutInflater layoutInflater, ViewGroup viewParent) {
         layoutInflater.inflate(R.layout.activity_dialog_window, viewParent);
         Button button = viewParent.findViewById(R.id.btn_ok);
-        button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                close();
-            }
-        });
+        button.setOnClickListener(v -> close());
         ll_panel = viewParent.findViewById(R.id.ll_panel);
         ll_panel.setVisibility(View.GONE);
-        ll_panel.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-            }
-        });
         startBakcground();
 
         tv_title = viewParent.findViewById(R.id.tv_title);
@@ -69,14 +58,11 @@ public class DialogWindowActivity extends DialogActivity {
         //执行事件
         alphaAnim.setDuration(400);//anticipate_interpolator
         alphaAnim.setInterpolator(new AccelerateInterpolator());
-        alphaAnim.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-            @Override
-            public void onAnimationUpdate(ValueAnimator animation) {
-                int value = (int) animation.getAnimatedValue();
-                int value1 = value << (6 * 4);
-                //System.out.println("value1=" + value1);
-                getWindow().setBackgroundDrawable(new ColorDrawable(value1));
-            }
+        alphaAnim.addUpdateListener(animation -> {
+            int value = (int) animation.getAnimatedValue();
+            int value1 = value << (6 * 4);
+            //System.out.println("value1=" + value1);
+            getWindow().setBackgroundDrawable(new ColorDrawable(value1));
         });
         //延迟
         //alphaAnim.setStartDelay(300);
@@ -146,16 +132,19 @@ public class DialogWindowActivity extends DialogActivity {
                 overridePendingTransition(0, 0);//R.anim.abc_slide_out_bottom
             }
         });
-        alphaAnim.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-            @Override
-            public void onAnimationUpdate(ValueAnimator animation) {
-                int value = (int) animation.getAnimatedValue();
-                int value1 = value << (6 * 4);
-                //System.out.println("value1=" + value1);
-                getWindow().setBackgroundDrawable(new ColorDrawable(value1));
-            }
+        alphaAnim.addUpdateListener(animation -> {
+            int value = (int) animation.getAnimatedValue();
+            int value1 = value << (6 * 4);
+            //System.out.println("value1=" + value1);
+            getWindow().setBackgroundDrawable(new ColorDrawable(value1));
         });
         //alphaAnim.setStartDelay(400);
         alphaAnim.start();
     }
+    /*@Override
+    public void finish() {
+        super.finish();
+        // 参数1：MainActivity进场动画，参数2：SecondActivity出场动画
+        overridePendingTransition(0, R.anim.fade_out);
+    }*/
 }

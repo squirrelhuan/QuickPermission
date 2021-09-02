@@ -3,6 +3,7 @@ package cn.demomaster.quickpermission_library;
 import android.Manifest;
 import android.annotation.TargetApi;
 import android.app.Activity;
+import android.app.ActivityManager;
 import android.app.AlertDialog;
 import android.app.AppOpsManager;
 import android.content.Context;
@@ -33,6 +34,7 @@ import cn.demomaster.quickpermission_library.dialog.DialogWindowActivity;
 import cn.demomaster.quickpermission_library.model.PermissionModel;
 import cn.demomaster.quickpermission_library.model.PermissionRequest;
 
+import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
 import static cn.demomaster.quickpermission_library.util.PermissionGroupUtil.getPermissionModels;
 
 /**
@@ -40,7 +42,7 @@ import static cn.demomaster.quickpermission_library.util.PermissionGroupUtil.get
  * Created by huan on 2017/11/14.
  */
 public class PermissionHelper {
-    public static String TAG = "PermissionManager";
+    public static final String TAG = "PermissionManager";
     public static final int REQUEST_PERMISS_COMMON_CODE = 32418;
     //请求悬浮
     public static final int REQUEST_PERMISS_SPECIAL_CODE = 32419;
@@ -90,7 +92,7 @@ public class PermissionHelper {
         Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION);
         intent.setData(Uri.parse("package:" + context.getPackageName()));
         //intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        ((Activity) context).startActivityForResult(intent, REQUEST_PERMISS_SPECIAL_CODE);
+        context.startActivityForResult(intent, REQUEST_PERMISS_SPECIAL_CODE);
     }
 
     // 跳转到设置-允许安装未知来源-页面
@@ -104,7 +106,7 @@ public class PermissionHelper {
         //context.startActivity(intent);//startActivityForResult
     }
 
-    private static void startPermissionActivity(Activity context, PermissionRequest request) {
+    private static void startPermissionActivity(Context context, PermissionRequest request) {
         Intent intent = null;
         int code = REQUEST_PERMISS_SPECIAL_CODE;
         String permissionName = request.getPermissionModelList().get(request.getIndex()).getName();
@@ -114,7 +116,7 @@ public class PermissionHelper {
         switch (permissionName) {
             case Manifest.permission.WRITE_SETTINGS:
                 intent = new Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS);
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                intent.addFlags(FLAG_ACTIVITY_NEW_TASK);
                 break;
             case Manifest.permission.PACKAGE_USAGE_STATS://查看网络访问状态
                 intent = new Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS);
@@ -138,7 +140,12 @@ public class PermissionHelper {
         if(packageURI!=null) {
             intent.setData(packageURI);
         }
-        ((Activity) context).startActivityForResult(intent, code);
+        if(context instanceof Activity) {
+            ((Activity) context).startActivityForResult(intent, code);
+        }else {
+            intent.setFlags(FLAG_ACTIVITY_NEW_TASK);
+            context.startActivity(intent);
+        }
         PermissionListener listener = request.getListener();
         if(listener!=null) {
             listener.onStartPermissionActivity(context, request);
@@ -186,17 +193,22 @@ public class PermissionHelper {
                 case Manifest.permission.PACKAGE_USAGE_STATS:
                     return isGrantedUsagePremission(context);
                 case Manifest.permission.WRITE_SETTINGS:
-                    return Settings.System.canWrite(context);
                 case Manifest.permission.WRITE_SECURE_SETTINGS:
                     return Settings.System.canWrite(context);
                 case Manifest.permission.BIND_ACCESSIBILITY_SERVICE:
                     return false;
                 case Manifest.permission.MANAGE_EXTERNAL_STORAGE:
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                        //boolean hasAnyRequestedLegacyExternalStorage =
+                        /*PackageManager pm = context.getPackageManager();
+                        PackageInfo packageInfo = pm.getPackageArchiveInfo("",0);
+                        context.getApplicationContext().getApplicationInfo().hasRequestedLegacyExternalStorage();*/
+                        //context.getApplicationContext()..getApplicationInfo(). requestLegacyExternalStorage
                         boolean p = Environment.isExternalStorageManager();
                         return p;// 权限是否已经 授权 GRANTED---授权  DINIED---拒绝
+                    }else {
+                        return true;
                     }
-                    break;
                 default:
                     int r = ContextCompat.checkSelfPermission(context.getApplicationContext(), permissionName);
                     return (r == PackageManager.PERMISSION_GRANTED);// 权限是否已经 授权 GRANTED---授权  DINIED---拒绝
@@ -263,7 +275,7 @@ public class PermissionHelper {
      * @param permissions
      * @param listener
      */
-    public static void requestPermission(Activity context, String[] permissions, PermissionListener listener) {
+    public static void requestPermission(Context context, String[] permissions, PermissionListener listener) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) { //当手机系统大于 23 时，才有必要去判断权限是否获取
             List<PermissionModel> permissionModelList = getPermissionModels(permissions);
             //List<String> list = getPermissionGroup(permissionModelList);
@@ -280,7 +292,7 @@ public class PermissionHelper {
         }
     }
 
-    private static void requestPermission(Activity context, PermissionRequest request) {
+    private static void requestPermission(Context context, PermissionRequest request) {
         if (request.getPermissionModelList() == null || request.getIndex() >= request.getPermissionModelList().size()) {
             if (request.getListener() != null) {
                 request.getListener().onPassed();
@@ -290,7 +302,7 @@ public class PermissionHelper {
         requestPermissionImpl(context, request);
     }
 
-    private static Map<Integer, PermissionRequest> requestMap = new HashMap<>();
+    private static final Map<Integer, PermissionRequest> requestMap = new HashMap<>();
 
     /**
      * 发起权限申请
@@ -298,7 +310,7 @@ public class PermissionHelper {
      * @param context
      * @param request
      */
-    private static void requestPermissionImpl(final Activity context, PermissionRequest request) {
+    private static void requestPermissionImpl(final Context context, PermissionRequest request) {
         String permissionName = request.getPermissionModelList().get(request.getIndex()).getName();
         if (getPermissionStatus(context, permissionName)) {//自定义申请权限
             dealPermissionResult(context, request);
@@ -316,7 +328,7 @@ public class PermissionHelper {
         requestPermissionImpl2(context, request);
     }
 
-    private static void requestPermissionImpl2(Activity context, PermissionRequest request) {
+    private static void requestPermissionImpl2(Context context, PermissionRequest request) {
         String permissionName = request.getPermissionModelList().get(request.getIndex()).getName();
         String[] permissions = new String[]{permissionName};
         System.out.println("权限申请:" + request.getIndex() + ",RequestCode:" + request.getRequestCode() + ",[" + permissionName + "]," + request.getPermissionModelList().get(request.getIndex()).getDesc());
@@ -332,7 +344,11 @@ public class PermissionHelper {
                 break;
             default:
                 requestMap.put(request.getRequestCode(), request);
-                ActivityCompat.requestPermissions((Activity) context, permissions, request.getRequestCode());
+                if(context instanceof Activity){
+                    ActivityCompat.requestPermissions((Activity) context, permissions, request.getRequestCode());
+                }else {
+                    ContextCompat.checkSelfPermission(context, permissionName);
+                }
                 break;
         }
     }
@@ -354,7 +370,7 @@ public class PermissionHelper {
         }
     }
 
-    private static void dealPermissionResult(Activity context, PermissionRequest request) {
+    private static void dealPermissionResult(Context context, PermissionRequest request) {
         if (request != null) {
             PermissionListener listener = request.getListener();
             List<PermissionModel> permissionModelList = request.getPermissionModelList();
@@ -377,7 +393,6 @@ public class PermissionHelper {
                         request.getListener().onPassed();
                     }
                 }
-                return;
             } else {
                 request.setIndex(request.getIndex() + 1);
                 requestPermission(context, request);
@@ -404,11 +419,11 @@ public class PermissionHelper {
 
         void onRefused();//权限未能全部通过
 
-        boolean handRequest(Activity context, PermissionRequest permissionRequest);//重写权限申请
+        boolean handRequest(Context context, PermissionRequest permissionRequest);//重写权限申请
 
-        boolean handRefused(Activity context, PermissionRequest permissionRequest);//处理拒绝事件
+        boolean handRefused(Context context, PermissionRequest permissionRequest);//处理拒绝事件
 
-        void onStartPermissionActivity(Activity context, PermissionRequest request);//页面跳转申请权限
+        void onStartPermissionActivity(Context context, PermissionRequest request);//页面跳转申请权限
     }
 
     public static abstract class PermissionListener implements PermissionListenerInterface {
@@ -420,7 +435,7 @@ public class PermissionHelper {
          * @return
          */
         @Override
-        public boolean handRequest(Activity context, PermissionRequest request) {
+        public boolean handRequest(Context context, PermissionRequest request) {
             PermissionModel permissionModel = request.getPermissionModelList().get(request.getIndex());
             System.out.println("权限被拒绝：" + permissionModel.getName());
             //弹框提示用户手动打开
@@ -443,7 +458,7 @@ public class PermissionHelper {
             return false;
         }
 
-        public void showPermissionDialog(Activity context, PermissionRequest request) {
+        public void showPermissionDialog(Context context, PermissionRequest request) {
             PermissionModel permissionModel = request.getPermissionModelList().get(request.getIndex());
             String title = "权限申请";
             String tip = "";
@@ -468,17 +483,9 @@ public class PermissionHelper {
                     tip = "文件管理权限";
                     break;
             }
-            showAlert(context, title, tip, !handRefused(context, request), new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    requestPermissionImpl2(context, request);
-                }
-            }, new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    dialog.dismiss();
-                    dealPermissionResult(context, request);
-                }
+            showAlert(context, title, tip, !handRefused(context, request), (dialog, which) -> requestPermissionImpl2(context, request), (dialog, which) -> {
+                dialog.dismiss();
+                dealPermissionResult(context, request);
             });
         }
 
@@ -490,7 +497,7 @@ public class PermissionHelper {
          * @return true 重新申请 false 忽略继续申请下一个
          */
         @Override
-        public boolean handRefused(Activity context, PermissionRequest request) {
+        public boolean handRefused(Context context, PermissionRequest request) {
             PermissionModel permissionModel = request.getPermissionModelList().get(request.getIndex());
             switch (permissionModel.getName()) {
                 case Manifest.permission.SYSTEM_ALERT_WINDOW:
@@ -502,21 +509,23 @@ public class PermissionHelper {
         }
 
         @Override
-        public void onStartPermissionActivity(Activity context, PermissionRequest request) {
+        public void onStartPermissionActivity(Context context, PermissionRequest request) {
             String permissionName = request.getPermissionModelList().get(request.getIndex()).getName();
             if (permissionName.equals(Manifest.permission.SYSTEM_ALERT_WINDOW)
             ||permissionName.equals(Manifest.permission.BIND_ACCESSIBILITY_SERVICE)) {
                 Handler handler = new Handler(Looper.getMainLooper());
-                handler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        Intent intent = new Intent(context, DialogWindowActivity.class);
-                        Bundle bundle = new Bundle();
-                        bundle.putString("permission", permissionName);
-                        intent.putExtras(bundle);
-                        (context).startActivity(intent);
-                        // 参数1：SecondActivity进场动画，参数2：MainActivity出场动画
-                        ((Activity) context).overridePendingTransition(0, 0);
+                handler.post(() -> {
+                    Intent intent = new Intent(context, DialogWindowActivity.class);
+                    Bundle bundle = new Bundle();
+                    bundle.putString("permission", permissionName);
+                    intent.putExtras(bundle);
+                    if(!(context instanceof Activity)){
+                        intent.setFlags(FLAG_ACTIVITY_NEW_TASK);
+                    }
+                    (context).startActivity(intent);
+                    // 参数1：SecondActivity进场动画，参数2：MainActivity出场动画
+                    if(context instanceof Activity) {
+                        ((Activity)context).overridePendingTransition(0, 0);
                     }
                 });
             }
