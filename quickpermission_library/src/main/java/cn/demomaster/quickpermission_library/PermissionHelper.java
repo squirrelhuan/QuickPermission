@@ -47,6 +47,13 @@ public class PermissionHelper {
     //请求悬浮
     public static final int REQUEST_PERMISS_SPECIAL_CODE = 32419;
     private static PermissionHelper instance;
+/*
+    Activity activity;
+
+    public PermissionHelper(Activity activity) {
+        this.activity = activity;
+    }
+*/
 
     public static PermissionHelper getInstance() {
         if (instance == null) {
