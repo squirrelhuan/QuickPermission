@@ -3,7 +3,6 @@ package cn.demomaster.quickpermission_library;
 import android.Manifest;
 import android.annotation.TargetApi;
 import android.app.Activity;
-import android.app.ActivityManager;
 import android.app.AlertDialog;
 import android.app.AppOpsManager;
 import android.content.Context;
